@@ -23,9 +23,16 @@ namespace Flurl.Http
 	    /// </summary>
 	    IDictionary<string, object> Headers { get; }
 
-	    /// <summary>
-	    /// Collection of HttpCookies sent and received with all requests using this client.
-	    /// </summary>
-	    IDictionary<string, Cookie> Cookies { get; }
+#if NET45 || NETSTANDARD2_0
+        /// <summary>
+        /// Collection of headers sent on all requests using this client.
+        /// </summary>
+        IDictionary<string, object> HeadersPreserved { get; }
+#endif
+
+        /// <summary>
+        /// Collection of HttpCookies sent and received with all requests using this client.
+        /// </summary>
+        IDictionary<string, Cookie> Cookies { get; }
     }
 }

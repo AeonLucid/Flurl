@@ -28,14 +28,31 @@ namespace Flurl.Http
 		    return clientOrRequest;
 	    }
 
-	    /// <summary>
-	    /// Sets HTTP headers based on property names/values of the provided object, or keys/values if object is a dictionary, to be sent with this IFlurlRequest or all requests made with this IFlurlClient.
-	    /// </summary>
-	    /// <param name="clientOrRequest">The IFlurlClient or IFlurlRequest.</param>
-	    /// <param name="headers">Names/values of HTTP headers to set. Typically an anonymous object or IDictionary.</param>
-	    /// <param name="replaceUnderscoreWithHyphen">If true, underscores in property names will be replaced by hyphens. Default is true.</param>
-	    /// <returns>This IFlurlClient or IFlurlRequest.</returns>
-	    public static T WithHeaders<T>(this T clientOrRequest, object headers, bool replaceUnderscoreWithHyphen = true) where T : IHttpSettingsContainer {
+#if NET45 || NETSTANDARD2_0
+        /// <summary>
+        /// Sets an HTTP header to be sent with this IFlurlRequest or all requests made with this IFlurlClient.
+        /// </summary>
+        /// <param name="clientOrRequest">The IFlurlClient or IFlurlRequest.</param>
+        /// <param name="name">HTTP header name.</param>
+        /// <param name="value">HTTP header value.</param>
+        /// <returns>This IFlurlClient or IFlurlRequest.</returns>
+        public static T WithHeaderPreserved<T>(this T clientOrRequest, string name, object value) where T : IHttpSettingsContainer {
+		    if (value == null && clientOrRequest.HeadersPreserved.ContainsKey(name))
+			    clientOrRequest.HeadersPreserved.Remove(name);
+			else if (value != null)
+			    clientOrRequest.HeadersPreserved[name] = value;
+		    return clientOrRequest;
+        }
+#endif
+
+        /// <summary>
+        /// Sets HTTP headers based on property names/values of the provided object, or keys/values if object is a dictionary, to be sent with this IFlurlRequest or all requests made with this IFlurlClient.
+        /// </summary>
+        /// <param name="clientOrRequest">The IFlurlClient or IFlurlRequest.</param>
+        /// <param name="headers">Names/values of HTTP headers to set. Typically an anonymous object or IDictionary.</param>
+        /// <param name="replaceUnderscoreWithHyphen">If true, underscores in property names will be replaced by hyphens. Default is true.</param>
+        /// <returns>This IFlurlClient or IFlurlRequest.</returns>
+        public static T WithHeaders<T>(this T clientOrRequest, object headers, bool replaceUnderscoreWithHyphen = true) where T : IHttpSettingsContainer {
 		    if (headers == null)
 			    return clientOrRequest;
 

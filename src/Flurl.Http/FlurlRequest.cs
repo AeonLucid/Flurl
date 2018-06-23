@@ -102,10 +102,17 @@ namespace Flurl.Http
 		/// </summary>
 		public IDictionary<string, object> Headers { get; } = new Dictionary<string, object>();
 
-		/// <summary>
-		/// Collection of HttpCookies sent and received by the IFlurlClient associated with this request.
-		/// </summary>
-		public IDictionary<string, Cookie> Cookies => Client.Cookies;
+#if NET45 || NETSTANDARD2_0
+	    /// <summary>
+	    /// Collection of preserved headers sent on this request.
+	    /// </summary>
+        public IDictionary<string, object> HeadersPreserved { get; } = new Dictionary<string, object>();
+#endif
+
+        /// <summary>
+        /// Collection of HttpCookies sent and received by the IFlurlClient associated with this request.
+        /// </summary>
+        public IDictionary<string, Cookie> Cookies => Client.Cookies;
 
 		/// <inheritdoc />
 		public async Task<HttpResponseMessage> SendAsync(HttpMethod verb, HttpContent content = null, CancellationToken? cancellationToken = null, HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead) {
@@ -128,7 +135,10 @@ namespace Flurl.Http
 			call.StartedUtc = DateTime.UtcNow;
 			try {
 				WriteHeaders(request);
-				if (Settings.CookiesEnabled)
+#if NET45 || NETSTANDARD2_0
+			    WriteHeadersPreserved(request);
+#endif
+                if (Settings.CookiesEnabled)
 					WriteRequestCookies(request);
 
 				if (Client.CheckAndRenewConnectionLease())
@@ -155,7 +165,7 @@ namespace Flurl.Http
 			}
 		}
 
-		private void WriteHeaders(HttpRequestMessage request) {
+	    private void WriteHeaders(HttpRequestMessage request) {
 			Headers.Merge(Client.Headers);
 			foreach (var header in Headers) {
 				// Flurl favors being a lot less fancy with headers than HttpClient. No validation,
@@ -185,9 +195,43 @@ namespace Flurl.Http
 						break;
 				}
 			}
-		}
+	    }
 
-		private void WriteRequestCookies(HttpRequestMessage request) {
+#if NET45 || NETSTANDARD2_0
+        private void WriteHeadersPreserved(HttpRequestMessage request)
+	    {
+            HeadersPreserved.Merge(Client.HeadersPreserved);
+	        foreach (var header in HeadersPreserved)
+	        {
+	            var value = header.Value.ToInvariantString();
+
+                switch (header.Key.ToLower())
+                {
+                    case "accept":
+                        request.Headers.Accept.AddPreserved(value);
+                        break;
+
+                    case "accept-charset":
+                        request.Headers.AcceptCharset.AddPreserved(value);
+                        break;
+
+                    case "accept-encoding":
+                        request.Headers.AcceptEncoding.AddPreserved(value);
+                        break;
+
+                    case "accept-language":
+                        request.Headers.AcceptLanguage.AddPreserved(value);
+                        break;
+
+                    default:
+                        request.Headers.TryAddWithoutValidation(header.Key, header.Value.ToInvariantString());
+                        break;
+                }
+            }
+        }
+#endif
+
+        private void WriteRequestCookies(HttpRequestMessage request) {
 			if (!Cookies.Any()) return;
 			var uri = request.RequestUri;
 			var cookieHandler = FindHttpClientHandler(Client.HttpMessageHandler);

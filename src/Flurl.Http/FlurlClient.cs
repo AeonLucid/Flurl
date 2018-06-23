@@ -100,8 +100,13 @@ namespace Flurl.Http
 		/// <inheritdoc />
 		public IDictionary<string, object> Headers { get; } = new Dictionary<string, object>();
 
-		/// <inheritdoc />
-		public IDictionary<string, Cookie> Cookies { get; } = new Dictionary<string, Cookie>();
+#if NET45 || NETSTANDARD2_0
+        /// <inheritdoc />
+        public IDictionary<string, object> HeadersPreserved { get; } = new Dictionary<string, object>();
+#endif
+
+        /// <inheritdoc />
+        public IDictionary<string, Cookie> Cookies { get; } = new Dictionary<string, Cookie>();
 
 		/// <inheritdoc />
 		public HttpClient HttpClient => HttpTest.Current?.HttpClient ?? _httpClient.Value;
